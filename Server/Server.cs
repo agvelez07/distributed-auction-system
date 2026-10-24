@@ -19,8 +19,10 @@ namespace Server {
         Start,
         Accepted,
         Rejected,  
+        Status,
         Bye,
-        End
+        End,
+        Error
     }
 
    
