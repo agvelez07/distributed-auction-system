@@ -1,10 +1,14 @@
 using System.Net.Sockets;
+using Shared;
 
 namespace Server
 {
     // One thread per connected client
     public class ClientHandler
     {
+        // A client that sends no valid name in this time is dropped
+        private const int NameTimeoutMs = 30000;
+
         private readonly TcpClient socket;
         private readonly Auction auction;
         private readonly Thread thread;
@@ -46,17 +50,20 @@ namespace Server
 
                 Log("Client Connected");
 
+                // Don't wait forever for a client that never sends a name
+                socket.ReceiveTimeout = NameTimeoutMs;
                 if (!Register(reader, writer))
                 {
                     return;
                 }
+                socket.ReceiveTimeout = 0; // no timeout during the auction
 
                 // Blocks here until the server starts the auction
                 Log($"{name} is waiting for the auction to start");
-                auction.waitForStart();
+                auction.WaitForStart();
 
                 // Start <price> <duration> <item name>
-                writer.WriteLine($"{ServerResponse.Start} {auction.item.StartingPrice} {auction.DurationSec} {auction.item.Name}");
+                writer.WriteLine($"{ServerResponse.Start} {auction.Item.StartingPrice} {auction.DurationSec} {auction.Item.Name}");
 
                 HandleRequests(reader, writer);
 
@@ -74,7 +81,7 @@ namespace Server
                 }
 
                 socket.Close();
-                Log($"Finished ({name})");
+                Log(name == null ? "Finished (no name)" : $"Finished ({name})");
 
             }
 
@@ -101,7 +108,7 @@ namespace Server
                 }
 
                 string candidate = parts[1].Trim();
-                ServerResponse response = auction.addParticipant(candidate);
+                ServerResponse response = auction.AddParticipant(candidate);
                 writer.WriteLine(response);
 
                 if (response == ServerResponse.NameOk)

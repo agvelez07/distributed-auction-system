@@ -1,11 +1,11 @@
-using Server;
+using Shared;
 
 namespace Server
 {
     // Shared auction state. All access to it is protected by the mutex.
     public class Auction
     {
-        public Item item { get; }
+        public Item Item { get; }
         public int DurationSec { get; }
 
         // Only one thread at a time can read/change the state below
@@ -21,13 +21,13 @@ namespace Server
 
         public Auction(Item item, int durationSec)
         {
-            this.item = item;
+            Item = item;
             DurationSec = durationSec;
         }
 
         // Check and add in the same critical section
         // names stay unique
-        public ServerResponse addParticipant(string name)
+        public ServerResponse AddParticipant(string name)
         {
             mutex.WaitOne();
             try
@@ -96,7 +96,7 @@ namespace Server
         }
 
         // Called by each client thread. blocks until Start()
-        public void waitForStart()
+        public void WaitForStart()
         {
             startSemaphore.Wait();
         }
@@ -117,7 +117,7 @@ namespace Server
                 else if (highestBid == null)
                 {
                     // First bid (must reach the starting price)
-                    valid = bid.Amount >= item.StartingPrice;
+                    valid = bid.Amount >= Item.StartingPrice;
                 }
                 else
                 {

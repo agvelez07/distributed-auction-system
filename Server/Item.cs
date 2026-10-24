@@ -3,9 +3,9 @@ namespace Server
     public class Item
     {
         public string Name { get; }
-        public decimal StartingPrice { get; }
+        public int StartingPrice { get; }
 
-        public Item(string name, decimal startingPrice)
+        public Item(string name, int startingPrice)
         {
             Name = name;
             StartingPrice = startingPrice;

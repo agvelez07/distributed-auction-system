@@ -1,8 +1,7 @@
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
+using Shared;
 
 
 namespace Server
@@ -10,7 +9,7 @@ namespace Server
     public class AuctionServer
     {
         private readonly Auction auction;
-        private readonly int sec;
+        private readonly int entrySec;
         private readonly List<ClientHandler> handlers = new List<ClientHandler>();
 
         public AuctionServer(Auction auction, int entrySec)
@@ -33,13 +32,13 @@ namespace Server
                 listener.Start();
                 Log($"Listening on port {Protocol.Port}. Entry open for {entrySec}s");
 
-                AcceptClients(Listener);
+                AcceptClients(listener);
                 listener.Stop();
 
                 int count = auction.CloseEntry();
                 Log($"Entry closed with {count} participant(s)");
 
-                Log($"AUCTION STARTED: {auction.item.Name}, starting price {auction.item.StartingPrice}, duration {auction.DurationSec}s");
+                Log($"AUCTION STARTED: {auction.Item.Name}, starting price {auction.Item.StartingPrice}, duration {auction.DurationSec}s");
                 auction.Start(count);
 
                 Thread.Sleep(auction.DurationSec * 1000);
@@ -61,7 +60,7 @@ namespace Server
             }
             finally
             {
-                listener.Stop()
+                listener.Stop();
             }
         }
 
@@ -70,9 +69,9 @@ namespace Server
             Stopwatch clock = Stopwatch.StartNew();
             int id = 1;
 
-            while (clock.Elapsed.TotalSeconds < sec)
+            while (clock.Elapsed.TotalSeconds < entrySec)
             {
-                if (listerner.Pending())
+                if (listener.Pending())
                 {
                     TcpClient socket = listener.AcceptTcpClient();
                     ClientHandler handler = new ClientHandler(socket, auction, id);
@@ -85,8 +84,9 @@ namespace Server
                     Thread.Sleep(100);
                 }
             }
+        }
 
-            private void PrintResult()
+        private void PrintResult()
         {
             Bid? highest = auction.GetHighestBid();
 
@@ -94,7 +94,7 @@ namespace Server
 
             if (highest == null)
             {
-                Log($"'{auction.item.Name}' was not sold");
+                Log($"'{auction.Item.Name}' was not sold");
             }
             else
             {
